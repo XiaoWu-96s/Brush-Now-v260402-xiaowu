@@ -1,0 +1,7 @@
+{
+  "name": "Remix: Remix: 儿童 AR 刷牙互动游戏_多文件版_增加实时识别手动动作",
+  "description": "一款基于浏览器的 AR 互动应用，通过面部捕捉和游戏化体验引导儿童正确刷牙。",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}

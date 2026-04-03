@@ -1,0 +1,173 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #2dd4bf;
+  --color-secondary: #38bdf8;
+  --color-accent: #fb923c;
+  --color-boss: #581c87;
+  --color-bacteria: #991b1b;
+  --font-sans: "Nunito", "Comic Sans MS", sans-serif;
+}
+
+/* 基础文字描边与阴影效果 */
+.text-stroke {
+    text-shadow: 
+        -2px -2px 0 #fff,  
+         2px -2px 0 #fff,
+        -2px  2px 0 #fff,
+         2px  2px 0 #fff,
+         0px  4px 0 rgba(0,0,0,0.2);
+}
+/* 果冻弹跳过渡 */
+.jelly-transition {
+    transition: all 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.slow-move-transition {
+    transition: left 2s ease-in-out, top 2s ease-in-out;
+}
+
+/* 扫光特效 */
+.sweep-light-bar {
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 80%;
+    height: 100%;
+    background: linear-gradient(to right, 
+        rgba(255,255,255,0) 0%, 
+        rgba(200,255,255,0.8) 40%, 
+        rgba(255,255,255,1) 50%, 
+        rgba(200,255,255,0.8) 60%, 
+        rgba(255,255,255,0) 100%
+    );
+    transform: skewX(-20deg);
+    animation: sweepLight 1.5s ease-in-out forwards;
+    mix-blend-mode: screen;
+    filter: drop-shadow(0 0 10px rgba(255,255,255,0.8));
+}
+@keyframes sweepLight {
+    0% { left: -100%; }
+    100% { left: 200%; }
+}
+
+/* 闪亮星星特效 */
+.sparkle-star {
+    position: absolute;
+    width: 30px;
+    height: 30px;
+    background: white;
+    clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+    animation: sparkleAnim 1.5s ease-in-out forwards;
+    opacity: 0;
+    z-index: 60;
+}
+
+@keyframes sparkleAnim {
+    0% { transform: scale(0) rotate(0deg); opacity: 0; }
+    50% { transform: scale(1.5) rotate(180deg); opacity: 1; filter: drop-shadow(0 0 10px white); }
+    100% { transform: scale(0) rotate(360deg); opacity: 0; }
+}
+
+/* 牙齿闪白特效 */
+.flash-white {
+    animation: flash 0.5s ease-out;
+}
+@keyframes flash {
+    0% { filter: brightness(1.5) drop-shadow(0 0 20px rgba(255,255,255,0.8)); }
+    100% { filter: brightness(1) drop-shadow(0 0 0px transparent); }
+}
+/* 水流冲刷动画 */
+.water-flow {
+    animation: waterDrop 2s linear infinite;
+}
+@keyframes waterDrop {
+    0% { transform: translateY(-100%); opacity: 0.8; }
+    50% { opacity: 1; }
+    100% { transform: translateY(100%); opacity: 0.8; }
+}
+/* 牙齿发光 */
+.teeth-glowing {
+    filter: drop-shadow(0 0 20px rgba(255, 255, 255, 1)) brightness(1.2) !important;
+}
+/* Boss 震动特效 */
+.shake {
+    animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
+}
+@keyframes shake {
+    10%, 90% { transform: translate3d(-1px, 0, 0); }
+    20%, 80% { transform: translate3d(2px, 0, 0); }
+    30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+    40%, 60% { transform: translate3d(4px, 0, 0); }
+}
+/* 果冻弹出动效 */
+.jelly-popup {
+    animation: jellyPopup 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+@keyframes jellyPopup {
+    0% { transform: scale(0.5); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+}
+/* 贴纸拖拽相关 */
+.draggable-sticker {
+    position: absolute;
+    touch-action: none;
+    user-select: none;
+    cursor: grab;
+}
+.draggable-sticker:active {
+    cursor: grabbing;
+}
+
+/* 光波发射动画 */
+.lightwave-anim {
+    animation: lightwave 0.5s ease-in forwards;
+}
+@keyframes lightwave {
+    0% {
+        transform: translate(-50%, -50%) scale(0.5);
+        opacity: 0;
+        top: var(--origin-y);
+        left: var(--origin-x);
+    }
+    20% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+    }
+    100% {
+        transform: translate(-50%, -50%) scale(1.5);
+        opacity: 0;
+        top: var(--target-y);
+        left: var(--target-x);
+    }
+}
+
+/* 小范围浮动动画 */
+.float-anim {
+    animation: floatSmall 3s ease-in-out infinite;
+}
+@keyframes floatSmall {
+    0%, 100% { transform: translate(0, 0) rotate(0deg); }
+    25% { transform: translate(3px, -4px) rotate(2deg); }
+    50% { transform: translate(-2px, 3px) rotate(-1deg); }
+    75% { transform: translate(-4px, -2px) rotate(1deg); }
+}
+
+/* 呼吸动画 */
+.animate-breath {
+    animation: breath 2s infinite ease-in-out;
+}
+@keyframes breath {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+/* 被水冲走的动画 */
+.wash-away {
+    animation: washAwayAnim 1.5s cubic-bezier(0.36, 0, 0.66, -0.56) forwards;
+}
+@keyframes washAwayAnim {
+    0% { transform: translateY(0) scale(1) rotate(0deg); opacity: 1; }
+    15% { transform: translateY(-20px) scale(1.1) rotate(5deg); opacity: 1; }
+    100% { transform: translateY(150vh) scale(0.5) rotate(-20deg); opacity: 0; }
+}
