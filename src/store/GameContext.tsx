@@ -151,7 +151,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (text.includes('戴好帽子')) {
       audioUrl = 'https://260308-bursh-app-1259547000.cos.ap-beijing.myqcloud.com/ready.mp3';
     } else if (text.includes('正式开始')) {
-      audioUrl = 'https://260308-bursh-app-1259547000.cos.ap-beijing.myqcloud.com/start.mp3';
+      audioUrl = 'https://260308-bursh-app-1259547000.cos.ap-beijing.myqcloud.com/Stage_Audio_start.mp3';
     } else if (text.includes('太棒了')) {
       audioUrl = 'https://260308-bursh-app-1259547000.cos.ap-beijing.myqcloud.com/feedback1.mp3';
     } else if (text.includes('就是这样')) {
