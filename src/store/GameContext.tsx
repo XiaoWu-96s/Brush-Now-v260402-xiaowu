@@ -34,6 +34,7 @@ interface GameContextType {
   isFlashing: boolean;
   isSpitting: boolean;
   isSweepLight: boolean;
+  showStartGif: boolean;
   selectedPhoto: number | null;
   activeStickers: Sticker[];
   showSaveSuccess: boolean;
@@ -94,6 +95,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [capturedPhotos, setCapturedPhotos] = useState<string[]>([]);
   const [spitCount, setSpitCount] = useState(0);
   const [isSweepLight, setIsSweepLight] = useState(false);
+  const [showStartGif, setShowStartGif] = useState(false);
 
   const lastFeedbackTime = useRef<number>(0);
   const guideInterval = useRef<NodeJS.Timeout | null>(null);
@@ -257,6 +259,28 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Game Loop
   useEffect(() => {
+    if (gameState === 'brush_normal') {
+      let audioUrl = '';
+      if (mainTimeLeft === 90) {
+        audioUrl = 'https://260308-bursh-app-1259547000.cos.ap-beijing.myqcloud.com/HuanBian_Audio1.mp3';
+      } else if (mainTimeLeft === 60) {
+        audioUrl = 'https://260308-bursh-app-1259547000.cos.ap-beijing.myqcloud.com/HuanBian_Audio2.mp3';
+      } else if (mainTimeLeft === 30) {
+        audioUrl = 'https://260308-bursh-app-1259547000.cos.ap-beijing.myqcloud.com/HuanBian_Audio3.mp3';
+      }
+
+      if (audioUrl) {
+        if (feedbackAudioRef.current) {
+          feedbackAudioRef.current.pause();
+          feedbackAudioRef.current.currentTime = 0;
+        }
+        feedbackAudioRef.current = new Audio(audioUrl);
+        feedbackAudioRef.current.play().catch(e => console.warn('HuanBian audio play failed:', e));
+      }
+    }
+  }, [mainTimeLeft, gameState]);
+
+  useEffect(() => {
     const timer = setInterval(() => {
       if (gameState === 'prep') {
         const randomPos: Quadrant = Math.random() > 0.5 ? 'top-left' : 'top-right';
@@ -328,7 +352,12 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setGuidePosition('top-left');
     guidePositionRef.current = 'top-left';
     playSound('bgm_brush');
-    showBubble('正式开始！跟着指示刷牙！', 3000);
+    showBubble('正式开始！跟着指示刷牙！', 4000);
+    
+    setShowStartGif(true);
+    setTimeout(() => {
+      setShowStartGif(false);
+    }, 4000);
     
     const positions: Quadrant[] = ['top-left', 'top-right', 'top-left', 'top-right'];
     let posIndex = 0;
@@ -384,10 +413,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const finishLoading = () => {
-    setGameState('prep');
-    showBubble('戴好帽子，来练习一下！', 4000);
-    const randomPos: Quadrant = Math.random() > 0.5 ? 'top-left' : 'top-right';
-    spawnBacteria(1, randomPos);
+    enterBrushNormal();
   };
 
   const skipToBoss = () => {
@@ -585,7 +611,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
   return (
     <GameContext.Provider value={{
       gameState, timeLeft, mainTimeLeft, guidePosition, bacteriaList,
-      bossHp, bossPos, isBossHit, showMotivation, motivationText, isFlashing, isSpitting, isSweepLight,
+      bossHp, bossPos, isBossHit, showMotivation, motivationText, isFlashing, isSpitting, isSweepLight, showStartGif,
       selectedPhoto, activeStickers, showSaveSuccess, attackEffects, capturedPhotos,
       finishLoading, skipToBoss, simulateBrush, goToPhotoDiy, selectPhoto, addSticker, updateStickerPosition, saveAndComplete, addCapturedPhoto, triggerSpit
     }}>

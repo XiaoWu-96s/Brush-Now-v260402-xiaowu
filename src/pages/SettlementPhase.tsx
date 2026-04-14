@@ -1,9 +1,30 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useGame } from '../store/GameContext';
 import VirtualTeeth from '../components/VirtualTeeth';
 
 const SettlementPhase: React.FC = () => {
   const { goToPhotoDiy } = useGame();
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    audioRef.current = new Audio('https://260308-bursh-app-1259547000.cos.ap-beijing.myqcloud.com/Congratulations_Audio.mp3');
+    audioRef.current.play().catch(e => console.warn('Congratulations audio play failed:', e));
+
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+      }
+    };
+  }, []);
+
+  const handleGoToPhotoDiy = () => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
+    goToPhotoDiy();
+  };
 
   return (
     <>
@@ -24,12 +45,17 @@ const SettlementPhase: React.FC = () => {
           {/* 奖励 */}
           <div className="bg-yellow-100 rounded-[2rem] p-4 mb-8 flex flex-col items-center border-4 border-yellow-300 w-full">
             <span className="text-gray-600 text-sm mb-2 font-bold">本次解锁奖励</span>
-            <span className="text-5xl">🎁</span>
+            <img 
+              src="https://260308-bursh-app-1259547000.cos.ap-beijing.myqcloud.com/Huizhang.png" 
+              alt="奖励徽章" 
+              className="w-20 h-20 object-contain drop-shadow-md"
+              referrerPolicy="no-referrer"
+            />
           </div>
 
           {/* 按钮 */}
           <button
-            onClick={goToPhotoDiy}
+            onClick={handleGoToPhotoDiy}
             className="w-full py-4 bg-primary text-white rounded-full text-2xl font-bold shadow-[0_8px_0_#0d9488] active:shadow-[0_0px_0_#0d9488] active:translate-y-2 transition-all"
           >
             去拍照打卡 ➔

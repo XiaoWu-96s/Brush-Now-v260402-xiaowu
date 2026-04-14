@@ -9,14 +9,15 @@ const UIOverlay: React.FC = () => {
     skipToBoss,
     bossHp,
     showMotivation,
-    motivationText
+    motivationText,
+    showStartGif
   } = useGame();
 
   return (
-    <div className="fixed inset-0 pointer-events-none flex flex-col z-50">
-      {/* Boss 战红色呼吸灯警告边框 */}
+    <div className="fixed inset-0 pointer-events-none flex flex-col z-[55]">
+      {/* Boss 战红色呼吸灯警告内发光 */}
       {gameState === 'brush_boss' && (
-        <div className="fixed inset-0 pointer-events-none z-40 border-[16px] border-red-600/50 animate-pulse"></div>
+        <div className="fixed inset-0 pointer-events-none z-40 shadow-[inset_0_0_60px_15px_rgba(220,38,38,1)] animate-pulse"></div>
       )}
 
       {/* 全屏水流特效 (z-index: 30) */}
@@ -49,7 +50,7 @@ const UIOverlay: React.FC = () => {
             {gameState === 'brush_normal' && (
               <button
                 onClick={skipToBoss}
-                className="pointer-events-auto bg-accent/90 px-4 py-2 rounded-full text-white text-xl shadow-lg border-4 border-white jelly-transition active:scale-95 font-bold"
+                className="pointer-events-auto text-white/90 text-xl font-bold active:scale-95 transition-transform drop-shadow-md px-4 py-2"
               >
                 跳过 ➔
               </button>
@@ -121,7 +122,7 @@ const UIOverlay: React.FC = () => {
       </div>
 
       {/* AR 头饰占位 (z-index: 10) */}
-      {['prep', 'brush_normal', 'brush_boss'].includes(gameState) && (
+      {['prep', 'brush_normal', 'brush_boss'].includes(gameState) && !showStartGif && (
         <div
           id="ar-hat"
           className="absolute z-10 pointer-events-none transition-all duration-75 ease-linear"
