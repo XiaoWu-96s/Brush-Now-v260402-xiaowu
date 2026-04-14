@@ -15,7 +15,26 @@ const AUDIO_URLS = [
   'https://260308-bursh-app-1259547000.cos.ap-beijing.myqcloud.com/feedback1.mp3',
   'https://260308-bursh-app-1259547000.cos.ap-beijing.myqcloud.com/feedback2.mp3',
   'https://260308-bursh-app-1259547000.cos.ap-beijing.myqcloud.com/feedback3.mp3',
-  'https://260308-bursh-app-1259547000.cos.ap-beijing.myqcloud.com/feedback4.mp3'
+  'https://260308-bursh-app-1259547000.cos.ap-beijing.myqcloud.com/feedback4.mp3',
+  'https://260308-bursh-app-1259547000.cos.ap-beijing.myqcloud.com/Stage_Audio_start.mp3',
+  'https://260308-bursh-app-1259547000.cos.ap-beijing.myqcloud.com/Stage_Audio_boss.mp3',
+  'https://260308-bursh-app-1259547000.cos.ap-beijing.myqcloud.com/Stage_Audio_final.mp3',
+  'https://260308-bursh-app-1259547000.cos.ap-beijing.myqcloud.com/HuanBian_Audio1.mp3',
+  'https://260308-bursh-app-1259547000.cos.ap-beijing.myqcloud.com/HuanBian_Audio2.mp3',
+  'https://260308-bursh-app-1259547000.cos.ap-beijing.myqcloud.com/HuanBian_Audio3.mp3',
+  'https://260308-bursh-app-1259547000.cos.ap-beijing.myqcloud.com/Congratulations_Audio.mp3',
+  'https://260308-bursh-app-1259547000.cos.ap-beijing.myqcloud.com/Attack_audio.mp3',
+  'https://260308-bursh-app-1259547000.cos.ap-beijing.myqcloud.com/bgm.mp3'
+];
+
+const IMAGE_URLS = [
+  'https://260308-bursh-app-1259547000.cos.ap-beijing.myqcloud.com/Stage_Image_start.gif',
+  'https://260308-bursh-app-1259547000.cos.ap-beijing.myqcloud.com/ShuiLiu.gif',
+  'https://img.heliar.top/file/1775046965018_Stage_title1.png',
+  'https://img.heliar.top/file/1775046966538_Stage_title2.png',
+  'https://img.heliar.top/file/1775046970871_Stage_title3.png',
+  'https://img.heliar.top/file/1775046963599_Stage_title4.png',
+  'https://260308-bursh-app-1259547000.cos.ap-beijing.myqcloud.com/start-button.png'
 ];
 
 const LoadingPhase: React.FC = () => {
@@ -24,7 +43,7 @@ const LoadingPhase: React.FC = () => {
 
   useEffect(() => {
     let loadedCount = 0;
-    const totalCount = AUDIO_URLS.length;
+    const totalCount = AUDIO_URLS.length + IMAGE_URLS.length;
 
     const loadAudio = async (url: string) => {
       try {
@@ -37,14 +56,32 @@ const LoadingPhase: React.FC = () => {
       }
     };
 
+    const loadImage = (url: string) => {
+      return new Promise<void>((resolve) => {
+        const img = new Image();
+        img.src = url;
+        img.onload = () => resolve();
+        img.onerror = () => {
+          console.warn(`Failed to preload image: ${url}`);
+          resolve();
+        };
+      });
+    };
+
     const preloadAll = async () => {
-      const promises = AUDIO_URLS.map(async (url) => {
+      const audioPromises = AUDIO_URLS.map(async (url) => {
         await loadAudio(url);
         loadedCount++;
         setProgress(Math.round((loadedCount / totalCount) * 100));
       });
 
-      await Promise.all(promises);
+      const imagePromises = IMAGE_URLS.map(async (url) => {
+        await loadImage(url);
+        loadedCount++;
+        setProgress(Math.round((loadedCount / totalCount) * 100));
+      });
+
+      await Promise.all([...audioPromises, ...imagePromises]);
     };
 
     preloadAll();
@@ -100,12 +137,18 @@ const LoadingPhase: React.FC = () => {
           <motion.button
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
-            whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
             onClick={finishLoading}
-            className="px-8 py-4 bg-cyan-500 text-white text-2xl font-bold rounded-full shadow-[0_0_20px_rgba(6,182,212,0.6)] border-2 border-cyan-300"
+            className="focus:outline-none"
           >
-            开始刷牙
+            <motion.img 
+              animate={{ scale: [1, 1.05, 1] }}
+              transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+              src="https://260308-bursh-app-1259547000.cos.ap-beijing.myqcloud.com/start-button.png" 
+              alt="开始刷牙" 
+              className="w-[200px] max-w-[80vw] h-auto object-contain drop-shadow-xl"
+              referrerPolicy="no-referrer"
+            />
           </motion.button>
         </div>
       )}
