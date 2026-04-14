@@ -102,6 +102,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const bossInterval = useRef<NodeJS.Timeout | null>(null);
   const bgmAudioRef = useRef<HTMLAudioElement | null>(null);
   const feedbackAudioRef = useRef<HTMLAudioElement | null>(null);
+  const isPriorityAudioPlaying = useRef<boolean>(false);
 
   // BGM Control
   useEffect(() => {
@@ -139,6 +140,13 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const showBubble = (text: string, duration: number) => {
+    // If priority audio (like HuanBian_Audio) is playing, block regular motivational feedback
+    if (isPriorityAudioPlaying.current) {
+      if (['太棒了', '就是这样', '继续保持', '消灭它们'].some(t => text.includes(t))) {
+        return;
+      }
+    }
+
     setMotivationText(text);
     setShowMotivation(true);
     if (motivationTimer.current) clearTimeout(motivationTimer.current);
@@ -173,6 +181,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
         feedbackAudioRef.current.pause();
         feedbackAudioRef.current.currentTime = 0;
       }
+      isPriorityAudioPlaying.current = false;
       feedbackAudioRef.current = new Audio(audioUrl);
       feedbackAudioRef.current.play().catch(e => console.warn('Feedback audio play failed:', e));
     }
@@ -274,8 +283,15 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
           feedbackAudioRef.current.pause();
           feedbackAudioRef.current.currentTime = 0;
         }
+        isPriorityAudioPlaying.current = true;
         feedbackAudioRef.current = new Audio(audioUrl);
-        feedbackAudioRef.current.play().catch(e => console.warn('HuanBian audio play failed:', e));
+        feedbackAudioRef.current.onended = () => {
+          isPriorityAudioPlaying.current = false;
+        };
+        feedbackAudioRef.current.play().catch(e => {
+          console.warn('HuanBian audio play failed:', e);
+          isPriorityAudioPlaying.current = false;
+        });
       }
     }
   }, [mainTimeLeft, gameState]);

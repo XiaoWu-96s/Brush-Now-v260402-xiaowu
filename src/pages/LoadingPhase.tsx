@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useGame } from '../store/GameContext';
 import { motion } from 'motion/react';
 
@@ -24,7 +24,8 @@ const AUDIO_URLS = [
   'https://260308-bursh-app-1259547000.cos.ap-beijing.myqcloud.com/HuanBian_Audio3.mp3',
   'https://260308-bursh-app-1259547000.cos.ap-beijing.myqcloud.com/Congratulations_Audio.mp3',
   'https://260308-bursh-app-1259547000.cos.ap-beijing.myqcloud.com/Attack_audio.mp3',
-  'https://260308-bursh-app-1259547000.cos.ap-beijing.myqcloud.com/bgm.mp3'
+  'https://260308-bursh-app-1259547000.cos.ap-beijing.myqcloud.com/bgm.mp3',
+  'https://260308-bursh-app-1259547000.cos.ap-beijing.myqcloud.com/Loading_Audio.mp3'
 ];
 
 const IMAGE_URLS = [
@@ -40,8 +41,38 @@ const IMAGE_URLS = [
 const LoadingPhase: React.FC = () => {
   const { finishLoading } = useGame();
   const [progress, setProgress] = useState(0);
+  const [hasInteracted, setHasInteracted] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  const handleInteraction = () => {
+    setHasInteracted(true);
+    
+    // Play video
+    if (videoRef.current) {
+      videoRef.current.play().catch(e => console.warn('Video play failed:', e));
+    }
+
+    // Play loading audio once
+    if (!audioRef.current) {
+      audioRef.current = new Audio('https://260308-bursh-app-1259547000.cos.ap-beijing.myqcloud.com/Loading_Audio.mp3');
+      audioRef.current.loop = false;
+    }
+    audioRef.current.play().catch(e => console.warn('Loading audio play failed:', e));
+  };
 
   useEffect(() => {
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!hasInteracted) return;
+
     let loadedCount = 0;
     const totalCount = AUDIO_URLS.length + IMAGE_URLS.length;
 
@@ -50,7 +81,6 @@ const LoadingPhase: React.FC = () => {
         const response = await fetch(url);
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         await response.blob();
-        // We can optionally store these object URLs in the context, but for now just fetching them caches them in the browser.
       } catch (error) {
         console.warn(`Failed to preload audio: ${url}`, error);
       }
@@ -85,7 +115,7 @@ const LoadingPhase: React.FC = () => {
     };
 
     preloadAll();
-  }, []);
+  }, [hasInteracted]);
 
   return (
     <motion.div 
@@ -96,7 +126,7 @@ const LoadingPhase: React.FC = () => {
     >
       {/* 背景视频 */}
       <video
-        autoPlay
+        ref={videoRef}
         loop
         muted
         playsInline
@@ -104,11 +134,24 @@ const LoadingPhase: React.FC = () => {
         src={BACKGROUND_VIDEO_URL}
       />
       
-      {/* 半透明遮罩已移除，如需恢复请取消注释下方代码 */}
-      {/* <div className="absolute inset-0 bg-black/40 z-[-1]" /> */}
+      {/* 交互遮罩 */}
+      {!hasInteracted && (
+        <div 
+          className="absolute inset-0 z-50 bg-black/20 flex flex-col justify-end items-center pb-20 cursor-pointer"
+          onClick={handleInteraction}
+        >
+          <motion.div
+            animate={{ opacity: [0.5, 1, 0.5] }}
+            transition={{ duration: 1.5, repeat: Infinity }}
+            className="text-white text-2xl font-bold drop-shadow-md tracking-widest"
+          >
+            点击屏幕继续
+          </motion.div>
+        </div>
+      )}
 
       {/* 进度条和文字容器：使用 -mt-32 向上偏移 */}
-      {progress !== 100 && (
+      {hasInteracted && progress !== 100 && (
         <div className="flex flex-col items-center -mt-32">
           <div className="text-4xl font-extrabold mb-8 text-white drop-shadow-lg">
             加载中...
@@ -127,7 +170,7 @@ const LoadingPhase: React.FC = () => {
         </div>
       )}
       
-      {progress === 100 && (
+      {hasInteracted && progress === 100 && (
         /* ============================================================================ */
         /* ⚠️ 调整开始按钮位置说明 (Adjust Start Button Position Instructions):         */
         /* 修改下面 className 中的 `bottom-32` 可以调整按钮距离底部的距离。             */
