@@ -1,22 +1,63 @@
-import React, { useRef } from 'react';
-import { useGame, Sticker } from '../store/GameContext';
+import React, { useRef, useState } from 'react';
+import { useGame } from '../store/GameContext';
 import VirtualTeeth from '../components/VirtualTeeth';
+import * as htmlToImage from 'html-to-image';
 
 const PhotoDiyPhase: React.FC = () => {
   const {
     selectedPhoto,
-    activeStickers,
     showSaveSuccess,
     capturedPhotos,
     selectPhoto,
-    addSticker,
-    updateStickerPosition,
     saveAndComplete
   } = useGame();
 
   const canvasRef = useRef<HTMLDivElement>(null);
-  const draggingStickerRef = useRef<Sticker | null>(null);
-  const dragOffsetRef = useRef({ x: 0, y: 0 });
+  const [isSaving, setIsSaving] = useState(false);
+  const [frameIndex, setFrameIndex] = useState(0);
+
+  const frames = [
+    'https://260308-bursh-app-1259547000.cos.ap-beijing.myqcloud.com/XiangKuang1.png',
+    'https://260308-bursh-app-1259547000.cos.ap-beijing.myqcloud.com/XiangKuang2.png',
+    'https://260308-bursh-app-1259547000.cos.ap-beijing.myqcloud.com/XiangKuang3.png'
+  ];
+
+  const handleSaveAndComplete = async () => {
+    if (!canvasRef.current || isSaving) return;
+    
+    setIsSaving(true);
+    try {
+      const filterOptions = {
+        filter: (node: HTMLElement) => {
+          if (node.tagName === 'BUTTON') return false;
+          return true;
+        }
+      };
+
+      // First call forces image loads and CSS recalculations 
+      // (a known workaround for html-to-image missing elements rendering)
+      await htmlToImage.toPng(canvasRef.current, { cacheBust: true, pixelRatio: 2, ...filterOptions });
+      
+      const dataUrl = await htmlToImage.toPng(canvasRef.current, {
+        cacheBust: true,
+        pixelRatio: 2, // Boost resolution for a better output
+        ...filterOptions
+      });
+      
+      const a = document.createElement('a');
+      a.href = dataUrl;
+      a.download = `brush_teeth_photo_${new Date().getTime()}.png`;
+      a.click();
+      
+      saveAndComplete();
+    } catch (error) {
+      console.error('Failed to save image:', error);
+      // Fallback: proceed with completion even if saving failed
+      saveAndComplete();
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   // Fallback to mock photos if user didn't brush enough to capture 4 photos
   const fallbackUrls = [
@@ -31,58 +72,45 @@ const PhotoDiyPhase: React.FC = () => {
     displayPhotos.push(fallbackUrls[displayPhotos.length]);
   }
 
-  const handleStartDrag = (e: React.TouchEvent | React.MouseEvent, sticker: Sticker) => {
-    draggingStickerRef.current = sticker;
-    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
-    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
-
-    if (canvasRef.current) {
-      const rect = canvasRef.current.getBoundingClientRect();
-      dragOffsetRef.current = {
-        x: clientX - rect.left - sticker.x,
-        y: clientY - rect.top - sticker.y
-      };
-    }
-  };
-
-  const handleDoDrag = (e: React.TouchEvent | React.MouseEvent, sticker: Sticker) => {
-    if (draggingStickerRef.current?.id !== sticker.id) return;
-
-    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
-    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
-
-    if (canvasRef.current) {
-      const rect = canvasRef.current.getBoundingClientRect();
-      const newX = clientX - rect.left - dragOffsetRef.current.x;
-      const newY = clientY - rect.top - dragOffsetRef.current.y;
-      updateStickerPosition(sticker.id, newX, newY);
-    }
-  };
-
-  const handleEndDrag = (sticker: Sticker) => {
-    if (draggingStickerRef.current?.id === sticker.id) {
-      draggingStickerRef.current = null;
-    }
-  };
-
   return (
     <>
       <VirtualTeeth />
-      <div className="fixed inset-0 z-[60] bg-gray-100 flex flex-col">
-        {/* 顶部栏 */}
-        <div className="p-6 text-center z-10">
-          <h2 className="text-3xl text-secondary text-stroke leading-relaxed">
-            {selectedPhoto === null ? '选一张最棒的照片吧！' : '装扮你的照片！'}
-          </h2>
-        </div>
+      <div 
+        className="fixed inset-0 z-[60] bg-gray-100 bg-cover bg-center overflow-hidden"
+        style={{ backgroundImage: 'url(https://260308-bursh-app-1259547000.cos.ap-beijing.myqcloud.com/PhotoDIY-bg.png)' }}
+        ref={canvasRef}
+      >
+        {/* 全局比例换算依据: 750*1334 (width=100vw, height=100vh) */}
+
+        {/* 返回按钮 (x20, y45 -> left: 2.66vw, top: 3.37vh) */}
+        <button 
+          className="absolute left-[2.66vw] top-[3.37vh] z-20 active:scale-95 transition-transform"
+          onClick={() => window.location.reload()}
+        >
+          <img 
+            src="https://260308-bursh-app-1259547000.cos.ap-beijing.myqcloud.com/BackButton.png" 
+            alt="返回" 
+            className="w-[10.6vw] max-w-[40px] h-auto"
+            referrerPolicy="no-referrer"
+          />
+        </button>
+
+        {/* 标题图 (左右居中, y40 -> top: 3vh) */}
+        <img 
+          src="https://260308-bursh-app-1259547000.cos.ap-beijing.myqcloud.com/PhotoDIY-title.png" 
+          alt="装扮你的照片" 
+          className="absolute left-1/2 -translate-x-1/2 top-[3vh] z-20 w-[46.6vw] max-w-[350px] h-auto pointer-events-none"
+          referrerPolicy="no-referrer"
+        />
 
         {/* 选图阶段 */}
         {selectedPhoto === null && (
-          <div className="flex-1 p-6 grid grid-cols-2 gap-4 content-start">
+          // 放在和DIY照片类似的垂直位置向下延伸
+          <div className="absolute top-[12.5vh] bottom-[11.24vh] left-0 right-0 w-full px-[6vw] grid grid-cols-2 gap-[4vw] content-start overflow-y-auto z-10 pb-10 custom-scrollbar">
             {[1, 2, 3, 4].map((i) => (
               <div
                 key={i}
-                className="aspect-[9/16] bg-white rounded-[2rem] border-4 border-gray-200 shadow-lg flex items-center justify-center text-gray-400 text-xl active:scale-95 transition-transform overflow-hidden relative"
+                className="w-full aspect-[545/817] bg-white rounded-[2rem] border-[1vw] border-gray-200 shadow-lg flex items-center justify-center text-gray-400 text-xl active:scale-95 transition-transform overflow-hidden relative cursor-pointer"
                 onClick={() => selectPhoto(i)}
               >
                 <img 
@@ -98,82 +126,59 @@ const PhotoDiyPhase: React.FC = () => {
 
         {/* 装饰阶段 */}
         {selectedPhoto !== null && (
-          <div className="flex-1 flex flex-col items-center justify-center p-6 relative overflow-hidden">
-            {/* 照片画布 */}
+          <>
+            {/* 相框图 (左右居中, y117 -> top: 8.77vh) */}
+            <img 
+              src={frames[frameIndex]} 
+              alt="相框" 
+              className="absolute left-1/2 -translate-x-1/2 top-[8.77vh] w-[100vw] sm:w-auto h-auto max-w-[750px] max-h-[85vh] object-contain pointer-events-none z-20"
+              referrerPolicy="no-referrer"
+              crossOrigin="anonymous"
+            />
+
+            {/* 照片画布 (左右居中, y167 -> top: 12.51vh, w: 545/750 -> 72.6vw) */}
             <div
-              className="w-full max-w-xs aspect-[9/16] bg-white rounded-[2rem] border-8 border-white shadow-2xl relative overflow-hidden"
-              ref={canvasRef}
+              className="absolute left-1/2 -translate-x-1/2 top-[12.51vh] w-[72.6vw] max-w-[545px] aspect-[545/817] bg-white rounded-[2rem] border-[1vw] border-white shadow-2xl overflow-hidden bg-cover bg-center z-10"
+              style={{ backgroundImage: `url(${displayPhotos[selectedPhoto - 1]})` }}
             >
-              <img 
-                src={displayPhotos[selectedPhoto - 1]} 
-                alt={`抓拍 ${selectedPhoto}`} 
-                className="absolute inset-0 w-full h-full object-cover pointer-events-none"
-                referrerPolicy="no-referrer"
-              />
-
-              {/* 已添加的贴纸 */}
-              {activeStickers.map((sticker) => (
-                <div
-                  key={sticker.id}
-                  className="draggable-sticker text-5xl"
-                  style={{ left: `${sticker.x}px`, top: `${sticker.y}px`, transform: 'translate(-50%, -50%)' }}
-                  onTouchStart={(e) => handleStartDrag(e, sticker)}
-                  onTouchMove={(e) => handleDoDrag(e, sticker)}
-                  onTouchEnd={() => handleEndDrag(sticker)}
-                  onMouseDown={(e) => handleStartDrag(e, sticker)}
-                  onMouseMove={(e) => handleDoDrag(e, sticker)}
-                  onMouseUp={() => handleEndDrag(sticker)}
-                  onMouseLeave={() => handleEndDrag(sticker)}
-                >
-                  {sticker.emoji}
-                </div>
-              ))}
             </div>
 
-            {/* 保存按钮 */}
-            <button
-              onClick={saveAndComplete}
-              className="mt-8 px-8 py-3 bg-accent text-white rounded-full text-2xl font-bold shadow-[0_6px_0_#ea580c] active:shadow-none active:translate-y-1 transition-all"
-            >
-              保存并完成
-            </button>
-          </div>
-        )}
+            {/* 按钮区 (左右居中, 距底部150 -> bottom: 11.24vh, 间距15 -> space-x-[2vw]) */}
+            <div className="absolute left-1/2 -translate-x-1/2 bottom-[11.24vh] flex items-center justify-center space-x-[2vw] z-30 w-[95vw]">
+              {/* 更换相框按钮 */}
+              <button
+                onClick={() => setFrameIndex((prev) => (prev + 1) % frames.length)}
+                className="transition-all active:scale-[0.85] flex-shrink-0"
+              >
+                <img 
+                  src="https://260308-bursh-app-1259547000.cos.ap-beijing.myqcloud.com/PhotoDIY-ChangeBtn.png" 
+                  alt="更换相框" 
+                  className="h-[7.8vh] max-h-[77px] w-auto object-contain"
+                  referrerPolicy="no-referrer"
+                />
+              </button>
 
-        {/* 底部 Tab 操作区 */}
-        {selectedPhoto !== null && (
-          <div className="h-48 bg-white rounded-t-[3rem] shadow-[0_-10px_30px_rgba(0,0,0,0.1)] flex flex-col z-10">
-            <div className="flex justify-center space-x-8 p-4 border-b-2 border-gray-100">
-              <button className="text-xl text-primary font-bold border-b-4 border-primary pb-1">贴纸</button>
-              <button className="text-xl text-gray-400 font-bold pb-1">相框</button>
-            </div>
-            <div className="flex-1 flex items-center justify-center space-x-6 p-4 overflow-x-auto">
+              {/* 保存按钮 */}
               <button
-                className="text-5xl bg-gray-100 p-4 rounded-[2rem] active:scale-95 transition-transform"
-                onClick={() => addSticker('✨')}
+                onClick={handleSaveAndComplete}
+                disabled={isSaving}
+                className={`transition-all active:scale-[0.85] flex-shrink-0 ${isSaving ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
-                ✨
-              </button>
-              <button
-                className="text-5xl bg-gray-100 p-4 rounded-[2rem] active:scale-95 transition-transform"
-                onClick={() => addSticker('👑')}
-              >
-                👑
-              </button>
-              <button
-                className="text-5xl bg-gray-100 p-4 rounded-[2rem] active:scale-95 transition-transform"
-                onClick={() => addSticker('💖')}
-              >
-                💖
+                <img 
+                  src="https://260308-bursh-app-1259547000.cos.ap-beijing.myqcloud.com/PhotoDIY-SaveBtn.png" 
+                  alt="保存" 
+                  className="h-[7.8vh] max-h-[77px] w-auto object-contain"
+                  referrerPolicy="no-referrer"
+                />
               </button>
             </div>
-          </div>
+          </>
         )}
 
         {/* 保存成功提示 */}
         {showSaveSuccess && (
-          <div className="absolute inset-0 z-50 flex items-center justify-center pointer-events-none">
-            <div className="bg-primary text-white px-8 py-4 rounded-full text-2xl font-bold shadow-2xl border-4 border-white jelly-popup">
+          <div className="absolute inset-0 z-[100] flex items-center justify-center pointer-events-none">
+            <div className="bg-primary text-white px-[8vw] py-[4vw] rounded-full text-[6vw] md:text-3xl font-bold shadow-2xl border-[1vw] border-white jelly-popup">
               已保存到相册！
             </div>
           </div>

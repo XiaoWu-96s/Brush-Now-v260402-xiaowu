@@ -46,7 +46,7 @@ interface GameContextType {
   skipToBoss: () => void;
   simulateBrush: (quadrant: Quadrant, originX?: number, originY?: number) => void;
   goToPhotoDiy: () => void;
-  selectPhoto: (index: number) => void;
+  selectPhoto: (index: number | null) => void;
   addSticker: (emoji: string) => void;
   updateStickerPosition: (id: number, x: number, y: number) => void;
   saveAndComplete: () => void;
@@ -546,7 +546,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setActiveStickers([]);
   };
 
-  const selectPhoto = (index: number) => {
+  const selectPhoto = (index: number | null) => {
     setSelectedPhoto(index);
     playSound('sfx_hit');
   };
