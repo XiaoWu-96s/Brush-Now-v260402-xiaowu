@@ -27,21 +27,14 @@ const PhotoDiyPhase: React.FC = () => {
     
     setIsSaving(true);
     try {
-      const filterOptions = {
-        filter: (node: HTMLElement) => {
-          if (node.tagName === 'BUTTON') return false;
-          return true;
-        }
-      };
-
       // First call forces image loads and CSS recalculations 
       // (a known workaround for html-to-image missing elements rendering)
-      await htmlToImage.toPng(canvasRef.current, { cacheBust: true, pixelRatio: 2, ...filterOptions });
+      await htmlToImage.toPng(canvasRef.current, { cacheBust: true, pixelRatio: 2, useCORS: true });
       
       const dataUrl = await htmlToImage.toPng(canvasRef.current, {
         cacheBust: true,
         pixelRatio: 2, // Boost resolution for a better output
-        ...filterOptions
+        useCORS: true
       });
       
       const a = document.createElement('a');
@@ -78,22 +71,8 @@ const PhotoDiyPhase: React.FC = () => {
       <div 
         className="fixed inset-0 z-[60] bg-gray-100 bg-cover bg-center overflow-hidden"
         style={{ backgroundImage: 'url(https://260308-bursh-app-1259547000.cos.ap-beijing.myqcloud.com/PhotoDIY-bg.png)' }}
-        ref={canvasRef}
       >
         {/* 全局比例换算依据: 750*1334 (width=100vw, height=100vh) */}
-
-        {/* 返回按钮 (x20, y45 -> left: 2.66vw, top: 3.37vh) */}
-        <button 
-          className="absolute left-[2.66vw] top-[3.37vh] z-20 active:scale-95 transition-transform"
-          onClick={() => window.location.reload()}
-        >
-          <img 
-            src="https://260308-bursh-app-1259547000.cos.ap-beijing.myqcloud.com/BackButton.png" 
-            alt="返回" 
-            className="w-[10.6vw] max-w-[40px] h-auto"
-            referrerPolicy="no-referrer"
-          />
-        </button>
 
         {/* 标题图 (左右居中, y40 -> top: 3vh) */}
         <img 
@@ -127,24 +106,29 @@ const PhotoDiyPhase: React.FC = () => {
         {/* 装饰阶段 */}
         {selectedPhoto !== null && (
           <>
-            {/* 相框图 (左右居中, y117 -> top: 8.77vh) */}
-            <img 
-              src={frames[frameIndex]} 
-              alt="相框" 
-              className="absolute left-1/2 -translate-x-1/2 top-[8.77vh] w-[100vw] sm:w-auto h-auto max-w-[750px] max-h-[85vh] object-contain pointer-events-none z-20"
-              referrerPolicy="no-referrer"
-              crossOrigin="anonymous"
-            />
-
-            {/* 照片画布 (左右居中, y167 -> top: 12.51vh, w: 545/750 -> 72.6vw) */}
-            <div
-              className="absolute left-1/2 -translate-x-1/2 top-[12.51vh] w-[72.6vw] max-w-[545px] aspect-[545/817] bg-white rounded-[2rem] border-[1vw] border-white shadow-2xl overflow-hidden bg-cover bg-center z-10"
-              style={{ backgroundImage: `url(${displayPhotos[selectedPhoto - 1]})` }}
+            {/* 合成画布容器：仅包含相框与照片，用于局部截屏保存 */}
+            <div 
+              ref={canvasRef}
+              className="absolute left-1/2 -translate-x-1/2 top-[8.77vh] w-full max-w-[750px] flex justify-center items-start z-10"
             >
+              {/* 相框图 */}
+              <img 
+                src={frames[frameIndex]} 
+                alt="相框" 
+                className="w-[100vw] sm:w-auto h-auto max-w-[750px] max-h-[85vh] object-contain pointer-events-none z-20 relative block"
+                referrerPolicy="no-referrer"
+              />
+
+              {/* 照片画布 (相对容器 y顶部距离: 13vh - 8.77vh = 4.23vh) */}
+              <div
+                className="absolute left-1/2 -translate-x-1/2 top-[4.23vh] w-[72.6vw] max-w-[545px] aspect-[545/817] bg-white rounded-[2rem] border-[1vw] border-white shadow-2xl overflow-hidden bg-cover bg-center z-10"
+                style={{ backgroundImage: `url(${displayPhotos[selectedPhoto - 1]})` }}
+              >
+              </div>
             </div>
 
-            {/* 按钮区 (左右居中, 距底部150 -> bottom: 11.24vh, 间距15 -> space-x-[2vw]) */}
-            <div className="absolute left-1/2 -translate-x-1/2 bottom-[11.24vh] flex items-center justify-center space-x-[2vw] z-30 w-[95vw]">
+            {/* 按钮区 (左右居中, bottom: 9.74vh, 间距15 -> space-x-[2vw]) */}
+            <div className="absolute left-1/2 -translate-x-1/2 bottom-[9.74vh] flex items-center justify-center space-x-[2vw] z-30 w-[95vw]">
               {/* 更换相框按钮 */}
               <button
                 onClick={() => setFrameIndex((prev) => (prev + 1) % frames.length)}
