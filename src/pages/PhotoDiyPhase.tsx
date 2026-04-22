@@ -29,12 +29,11 @@ const PhotoDiyPhase: React.FC = () => {
     try {
       // First call forces image loads and CSS recalculations 
       // (a known workaround for html-to-image missing elements rendering)
-      await htmlToImage.toPng(canvasRef.current, { cacheBust: true, pixelRatio: 2, useCORS: true });
+      await htmlToImage.toPng(canvasRef.current, { cacheBust: true, pixelRatio: 2 });
       
       const dataUrl = await htmlToImage.toPng(canvasRef.current, {
         cacheBust: true,
-        pixelRatio: 2, // Boost resolution for a better output
-        useCORS: true
+        pixelRatio: 2 // Boost resolution for a better output
       });
       
       const a = document.createElement('a');
@@ -64,6 +63,11 @@ const PhotoDiyPhase: React.FC = () => {
   while (displayPhotos.length < 4) {
     displayPhotos.push(fallbackUrls[displayPhotos.length]);
   }
+
+  const currentPhotoUrl = selectedPhoto !== null ? displayPhotos[selectedPhoto - 1] : '';
+  const proxiedPhotoUrl = currentPhotoUrl.startsWith('http') 
+    ? `/api/image-proxy?url=${encodeURIComponent(currentPhotoUrl)}` 
+    : currentPhotoUrl;
 
   return (
     <>
@@ -113,17 +117,23 @@ const PhotoDiyPhase: React.FC = () => {
             >
               {/* 相框图 */}
               <img 
-                src={frames[frameIndex]} 
+                src={`/api/image-proxy?url=${encodeURIComponent(frames[frameIndex])}`} 
                 alt="相框" 
                 className="w-[100vw] sm:w-auto h-auto max-w-[750px] max-h-[85vh] object-contain pointer-events-none z-20 relative block"
                 referrerPolicy="no-referrer"
+                crossOrigin="anonymous"
               />
 
               {/* 照片画布 (相对容器 y顶部距离: 13vh - 8.77vh = 4.23vh) */}
               <div
-                className="absolute left-1/2 -translate-x-1/2 top-[4.23vh] w-[72.6vw] max-w-[545px] aspect-[545/817] bg-white rounded-[2rem] border-[1vw] border-white shadow-2xl overflow-hidden bg-cover bg-center z-10"
-                style={{ backgroundImage: `url(${displayPhotos[selectedPhoto - 1]})` }}
+                className="absolute left-1/2 -translate-x-1/2 top-[4.23vh] w-[72.6vw] max-w-[545px] aspect-[545/817] bg-white rounded-[2rem] border-[1vw] border-white shadow-2xl overflow-hidden z-10"
               >
+                <img 
+                  src={proxiedPhotoUrl} 
+                  alt="照片" 
+                  className="w-full h-full object-cover"
+                  crossOrigin="anonymous"
+                />
               </div>
             </div>
 
